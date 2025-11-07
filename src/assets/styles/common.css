@@ -1,0 +1,46 @@
+.company-layout {
+  display: flex;
+  min-height: 100vh;
+  background-color: #ffffff;
+}
+
+.company-sidebar {
+  width: 240px;
+  flex-shrink: 0;
+  background-color: #ffffff;
+  border-right: 1px solid #ebeef5;
+}
+
+.company-main {
+  flex: 1;
+  padding: 20px 24px;
+  background-color: #ffffff;
+}
+
+.company-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #ebeef5;
+}
+
+.company-header h1 {
+  margin: 0;
+  color: #303133;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+@media (max-width: 1024px) {
+  .company-main {
+    padding: 12px;
+  }
+  
+  .company-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+}

@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录功能测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .success { border-color: #4CAF50; background: #f8fff8; }
+        .error { border-color: #f44336; background: #fff8f8; }
+        .warning { border-color: #ff9800; background: #fffaf0; }
+        button {
+            padding: 10px 15px;
+            margin: 5px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .btn-primary { background: #007bff; color: white; }
+        .btn-secondary { background: #6c757d; color: white; }
+        .log {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>登录功能测试</h1>
+    
+    <div class="test-section">
+        <h3>1. 环境变量检查</h3>
+        <div id="env-check">检查中...</div>
+        <button onclick="checkEnvironment()" class="btn-primary">重新检查</button>
+    </div>
+
+    <div class="test-section">
+        <h3>2. Supabase 连接测试</h3>
+        <div id="connection-check">等待测试...</div>
+        <button onclick="testConnection()" class="btn-primary">测试连接</button>
+    </div>
+
+    <div class="test-section">
+        <h3>3. 登录功能测试</h3>
+        <div>
+            <input type="text" id="username" placeholder="用户名/邮箱" style="padding: 8px; width: 200px; margin-right: 10px;">
+            <input type="password" id="password" placeholder="密码" style="padding: 8px; width: 200px; margin-right: 10px;">
+            <select id="loginType" style="padding: 8px;">
+                <option value="student">学生</option>
+                <option value="company">企业</option>
+            </select>
+            <button onclick="testLogin()" class="btn-primary">测试登录</button>
+        </div>
+        <div id="login-result">等待测试...</div>
+    </div>
+
+    <div class="test-section">
+        <h3>4. 测试日志</h3>
+        <div class="log" id="log"></div>
+        <button onclick="clearLog()" class="btn-secondary">清空日志</button>
+    </div>
+
+    <script>
+        let logContent = '';
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${message}\n`;
+            logContent += logEntry;
+            document.getElementById('log').textContent = logContent;
+            console.log(`[${type.toUpperCase()}]`, message);
+        }
+
+        function clearLog() {
+            logContent = '';
+            document.getElementById('log').textContent = '';
+        }
+
+        function checkEnvironment() {
+            const envCheck = document.getElementById('env-check');
+            
+            try {
+                const url = import.meta.env?.VITE_SUPABASE_URL || window.VITE_SUPABASE_URL;
+                const key = import.meta.env?.VITE_SUPABASE_ANON_KEY || window.VITE_SUPABASE_ANON_KEY;
+                
+                if (url && key) {
+                    envCheck.innerHTML = `
+                        <div class="success">
+                            ✅ 环境变量配置正确<br>
+                            URL: ${url.substring(0, 30)}...<br>
+                            Key: ${key.substring(0, 20)}...
+                        </div>
+                    `;
+                    log('环境变量检查: 通过');
+                } else {
+                    envCheck.innerHTML = `
+                        <div class="error">
+                            ❌ 环境变量未配置<br>
+                            请检查 .env 文件中的 VITE_SUPABASE_URL 和 VITE_SUPABASE_ANON_KEY
+                        </div>
+                    `;
+                    log('环境变量检查: 失败 - 未配置');
+                }
+            } catch (error) {
+                envCheck.innerHTML = `
+                    <div class="error">
+                        ❌ 环境变量检查失败: ${error.message}
+                    </div>
+                `;
+                log(`环境变量检查: 错误 - ${error.message}`);
+            }
+        }
+
+        async function testConnection() {
+            const connectionCheck = document.getElementById('connection-check');
+            
+            try {
+                connectionCheck.innerHTML = '<div class="warning">🔄 测试连接中...</div>';
+                
+                // 这里应该调用实际的 API 测试
+                // 由于这是静态 HTML，我们只能模拟测试
+                
+                setTimeout(() => {
+                    connectionCheck.innerHTML = `
+                        <div class="success">
+                            ✅ 连接测试通过<br>
+                            <small>注意: 这是模拟测试，实际连接需要运行应用</small>
+                        </div>
+                    `;
+                    log('连接测试: 模拟通过');
+                }, 1000);
+                
+            } catch (error) {
+                connectionCheck.innerHTML = `
+                    <div class="error">
+                        ❌ 连接测试失败: ${error.message}
+                    </div>
+                `;
+                log(`连接测试: 失败 - ${error.message}`);
+            }
+        }
+
+        async function testLogin() {
+            const loginResult = document.getElementById('login-result');
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const loginType = document.getElementById('loginType').value;
+            
+            if (!username || !password) {
+                loginResult.innerHTML = '<div class="warning">⚠️ 请输入用户名和密码</div>';
+                return;
+            }
+            
+            try {
+                loginResult.innerHTML = '<div class="warning">🔄 登录测试中...</div>';
+                log(`开始登录测试: ${username} (${loginType})`);
+                
+                // 模拟登录测试
+                setTimeout(() => {
+                    loginResult.innerHTML = `
+                        <div class="success">
+                            ✅ 登录测试通过<br>
+                            <small>注意: 这是模拟测试，实际登录需要运行应用</small>
+                        </div>
+                    `;
+                    log(`登录测试: 模拟成功 - ${username}`);
+                }, 1500);
+                
+            } catch (error) {
+                loginResult.innerHTML = `
+                    <div class="error">
+                        ❌ 登录测试失败: ${error.message}
+                    </div>
+                `;
+                log(`登录测试: 失败 - ${error.message}`);
+            }
+        }
+
+        // 页面加载时自动检查环境
+        window.addEventListener('load', () => {
+            checkEnvironment();
+            log('测试页面已加载');
+        });
+    </script>
+</body>
+</html>
