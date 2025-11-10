@@ -356,46 +356,6 @@ const submitApplication = async () => {
       return
     }
     
-    // 先检查是否已经申请过该岗位
-    const { data: existingApplication, error: checkError } = await supabase
-      .from('applications')
-      .select('id, status')
-      .eq('job_id', jobId.value)
-      .eq('student_id', studentData.id)
-      .single()
-    
-    if (checkError && checkError.code !== 'PGRST116') {
-      // PGRST116 表示没有找到记录，这是正常的
-      throw checkError
-    }
-    
-    if (existingApplication) {
-      ElMessage.warning(`您已经申请过该岗位，当前状态：${existingApplication.status}`)
-      applyDialogVisible.value = false
-      applying.value = false
-      return
-    }
-    
-    // 先检查是否已经申请过该岗位
-    const { data: existingApplication, error: checkError } = await supabase
-      .from('applications')
-      .select('id, status')
-      .eq('job_id', jobId.value)
-      .eq('student_id', studentData.id)
-      .single()
-    
-    if (checkError && checkError.code !== 'PGRST116') {
-      // PGRST116 表示没有找到记录，这是正常的
-      throw checkError
-    }
-    
-    if (existingApplication) {
-      ElMessage.warning(`您已经申请过该岗位，当前状态：${existingApplication.status}`)
-      applyDialogVisible.value = false
-      applying.value = false
-      return
-    }
-    
     // 获取选择的简历信息
     const selectedResume = resumes.value.find(r => r.id === applyForm.resumeId)
     

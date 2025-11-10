@@ -166,6 +166,19 @@ class PermissionService {
         return UserRole.HR_MANAGER
       }
       
+      // 首先检查用户是否是企业用户
+      const { data: companyData, error: companyError } = await supabase
+        .from('companies')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle()
+      
+      // 如果用户是企业用户，直接返回公司管理员角色
+      if (companyData && !companyError) {
+        console.log('检测到企业用户，使用公司管理员角色')
+        return UserRole.COMPANY_ADMIN
+      }
+      
       // 从 Supabase 获取用户角色信息
       const { data, error } = await supabase
         .from('user_roles')
