@@ -4,93 +4,220 @@ import type { Message, Conversation, MessageFilters, SendMessageRequest } from '
 export const messageApi = {
   // 获取对话列表
   async getConversations(userId: string) {
-    // 获取用户的所有联系人
-    const { data: contacts, error: contactsError } = await supabase
-      .from('contacts')
-      .select('*')
-      .or(`user1_id.eq.${userId},user2_id.eq.${userId}`)
-
-    if (contactsError) throw contactsError
-
-    // 获取每个联系人的最新消息和未读消息数
-    const conversations = await Promise.all(
-      contacts?.map(async (contact) => {
-        const otherUserId = contact.user1_id === userId ? contact.user2_id : contact.user1_id
-        
-        // 获取用户信息
-        const { data: userData } = await supabase
-          .from('profiles')
-          .select('username, avatar_url')
-          .eq('id', otherUserId)
-          .single()
-
-        // 获取最新消息
-        const { data: lastMessage } = await supabase
-          .from('messages')
+    try {
+      // 先检查conversations表是否存在
+      try {
+        // 使用新的对话表结构
+        const { data: conversations, error: conversationsError } = await supabase
+          .from('conversations')
           .select('*')
-          .or(`and(sender_id.eq.${userId},receiver_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},receiver_id.eq.${userId})`)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .single()
+          .or(`student_id.eq.${userId},company_id.eq.${userId}`)
+          .order('updated_at', { ascending: false })
 
-        // 获取未读消息数
-        const { count: unreadCount } = await supabase
-          .from('messages')
-          .select('*', { count: 'exact', head: true })
-          .eq('receiver_id', userId)
-          .eq('sender_id', otherUserId)
-          .eq('read', false)
-
-        return {
-          id: contact.id,
-          user_id: otherUserId,
-          username: userData?.username || '未知用户',
-          avatar_url: userData?.avatar_url,
-          last_message: lastMessage?.content,
-          last_message_time: lastMessage?.created_at || contact.last_activity,
-          unread_count: unreadCount || 0,
-          online: false // 这里可以集成实时在线状态
+        if (conversationsError) {
+          console.warn('对话表查询失败，回退到空列表:', conversationsError.message)
+          return [] as Conversation[] // 返回空列表
         }
-      }) || []
-    )
 
-    return conversations.filter(c => c.username !== '未知用户') as Conversation[]
+        // 获取每个对话的最新消息和未读消息数
+        const enrichedConversations = await Promise.all(
+          (conversations || []).map(async (conversation) => {
+            // 确定对方用户ID
+            const otherUserId = conversation.student_id === userId ? conversation.company_id : conversation.student_id
+            
+            // 获取对方用户信息
+            let username = '未知用户'
+            let avatar_url = ''
+            
+            try {
+              const { data: userData } = await supabase
+                .from('profiles')
+                .select('username, avatar_url')
+                .eq('id', otherUserId)
+                .single()
+              
+              if (userData) {
+                username = userData.username || '未知用户'
+                avatar_url = userData.avatar_url || ''
+              }
+            } catch (error) {
+              console.warn('获取用户信息失败:', error)
+            }
+
+            // 获取最新消息
+            let last_message = ''
+            let last_message_time = conversation.updated_at
+            
+            try {
+              const { data: lastMessage } = await supabase
+                .from('messages')
+                .select('content, created_at')
+                .eq('conversation_id', conversation.id)
+                .order('created_at', { ascending: false })
+                .limit(1)
+                .single()
+              
+              if (lastMessage) {
+                last_message = lastMessage.content
+                last_message_time = lastMessage.created_at
+              }
+            } catch (error) {
+              console.warn('获取最新消息失败:', error)
+            }
+
+            // 获取未读消息数
+            let unread_count = 0
+            try {
+              const { count } = await supabase
+                .from('messages')
+                .select('*', { count: 'exact', head: true })
+                .eq('conversation_id', conversation.id)
+                .eq('receiver_id', userId)
+                .eq('is_read', false)
+              
+              unread_count = count || 0
+            } catch (error) {
+              console.warn('获取未读消息数失败:', error)
+            }
+
+            return {
+              id: conversation.id,
+              user_id: otherUserId,
+              username: username,
+              avatar_url: avatar_url,
+              last_message: last_message,
+              last_message_time: last_message_time,
+              unread_count: unread_count,
+              online: false // 这里可以集成实时在线状态
+            }
+          })
+        )
+
+        return enrichedConversations.filter(c => c.username !== '未知用户') as Conversation[]
+      } catch (tableError) {
+        console.warn('对话表操作异常，返回空列表:', tableError)
+        return [] as Conversation[] // 返回空列表
+      }
+    } catch (error) {
+      console.error('获取对话列表失败:', error)
+      return [] as Conversation[] // 即使失败也返回空列表
+    }
   },
 
   // 获取对话消息
-  async getMessages(conversationId: string, filters?: MessageFilters) {
-    const { data: contact } = await supabase
-      .from('contacts')
-      .select('*')
-      .eq('id', conversationId)
-      .single()
+  async getMessages(conversationId: string, currentUserId: string, filters?: MessageFilters) {
+    // 如果conversationId是回退ID，则直接获取消息（不检查对话表）
+    if (conversationId === 'fallback-conversation') {
+      let query = supabase
+        .from('messages')
+        .select('*')
+        .eq('sender_id', currentUserId)
+        .or(`receiver_id.eq.${currentUserId},sender_id.eq.${currentUserId}`)
+        .order('created_at', { ascending: false })
 
-    if (!contact) throw new Error('对话不存在')
+      if (filters?.page && filters?.pageSize) {
+        const from = (filters.page - 1) * filters.pageSize
+        const to = from + filters.pageSize - 1
+        query = query.range(from, to)
+      }
 
-    let query = supabase
-      .from('messages')
-      .select('*')
-      .or(`and(sender_id.eq.${contact.user1_id},receiver_id.eq.${contact.user2_id}),and(sender_id.eq.${contact.user2_id},receiver_id.eq.${contact.user1_id})`)
-      .order('created_at', { ascending: false })
-
-    if (filters?.page && filters?.pageSize) {
-      const from = (filters.page - 1) * filters.pageSize
-      const to = from + filters.pageSize - 1
-      query = query.range(from, to)
+      const { data, error } = await query
+      
+      if (error) throw error
+      
+      // 处理消息数据，添加发送者信息
+      const messages = (data || []).map(msg => ({
+        ...msg,
+        sender_name: msg.sender_id === currentUserId ? '我' : '对方',
+        sender_avatar: '',
+        receiver_name: msg.receiver_id === currentUserId ? '我' : '对方',
+        sent_by_me: msg.sender_id === currentUserId
+      }))
+      
+      return messages.reverse() as Message[]
     }
 
-    const { data, error } = await query
-    
-    if (error) throw error
-    return data.reverse() as Message[]
+    // 否则使用对话表结构
+    try {
+      // 使用新的对话表结构
+      const { data: conversation, error: conversationError } = await supabase
+        .from('conversations')
+        .select('*')
+        .eq('id', conversationId)
+        .single()
+
+      if (conversationError) {
+        console.warn('对话表查询失败，回退到直接消息查询:', conversationError.message)
+        // 回退到直接消息查询
+        let query = supabase
+          .from('messages')
+          .select('*')
+          .or(`sender_id.eq.${currentUserId},receiver_id.eq.${currentUserId}`)
+          .order('created_at', { ascending: false })
+
+        if (filters?.page && filters?.pageSize) {
+          const from = (filters.page - 1) * filters.pageSize
+          const to = from + filters.pageSize - 1
+          query = query.range(from, to)
+        }
+
+        const { data, error } = await query
+        
+        if (error) throw error
+        
+        // 处理消息数据，添加发送者信息
+        const messages = (data || []).map(msg => ({
+          ...msg,
+          sender_name: msg.sender_id === currentUserId ? '我' : '对方',
+          sender_avatar: '',
+          receiver_name: msg.receiver_id === currentUserId ? '我' : '对方',
+          sent_by_me: msg.sender_id === currentUserId
+        }))
+        
+        return messages.reverse() as Message[]
+      }
+
+      if (!conversation) throw new Error('对话不存在')
+
+      let query = supabase
+        .from('messages')
+        .select('*')
+        .eq('conversation_id', conversationId)
+        .order('created_at', { ascending: false })
+
+      if (filters?.page && filters?.pageSize) {
+        const from = (filters.page - 1) * filters.pageSize
+        const to = from + filters.pageSize - 1
+        query = query.range(from, to)
+      }
+
+      const { data, error } = await query
+      
+      if (error) throw error
+      
+      // 处理消息数据，添加发送者信息
+      const messages = (data || []).map(msg => ({
+        ...msg,
+        sender_name: msg.sender_id === currentUserId ? '我' : '对方',
+        sender_avatar: '',
+        receiver_name: msg.receiver_id === currentUserId ? '我' : '对方',
+        sent_by_me: msg.sender_id === currentUserId
+      }))
+      
+      return messages.reverse() as Message[]
+    } catch (error) {
+      console.error('获取消息失败:', error)
+      throw error
+    }
   },
 
   // 发送消息
   async sendMessage(request: SendMessageRequest, senderId: string) {
-    // 确保联系人关系存在
-    await this.ensureContact(senderId, request.receiver_id)
+    // 确保对话关系存在
+    const conversationId = await this.ensureConversation(senderId, request.receiver_id)
 
     const messageData = {
+      conversation_id: conversationId,
       sender_id: senderId,
       receiver_id: request.receiver_id,
       content: request.content,
@@ -108,32 +235,59 @@ export const messageApi = {
 
     if (error) throw error
 
-    // 更新联系人最后活动时间
-    await supabase
-      .from('contacts')
-      .update({ last_activity: new Date().toISOString() })
-      .or(`and(user1_id.eq.${senderId},user2_id.eq.${request.receiver_id}),and(user1_id.eq.${request.receiver_id},user2_id.eq.${senderId})`)
-
     return data as Message
   },
 
-  // 确保联系人关系存在
-  async ensureContact(user1Id: string, user2Id: string) {
-    const { data: existingContact } = await supabase
-      .from('contacts')
-      .select('*')
-      .or(`and(user1_id.eq.${user1Id},user2_id.eq.${user2Id}),and(user1_id.eq.${user2Id},user2_id.eq.${user1Id})`)
-      .single()
+  // 确保对话关系存在
+  async ensureConversation(user1Id: string, user2Id: string, jobId?: string): Promise<string> {
+    try {
+      // 简化逻辑：直接使用传入的用户ID创建对话
+      
+      // 首先检查conversations表是否存在
+      try {
+        // 检查是否已经存在对话
+        const { data: existingConversations, error: queryError } = await supabase
+          .from('conversations')
+          .select('id')
+          .or(`student_id.eq.${user1Id},company_id.eq.${user2Id},student_id.eq.${user2Id},company_id.eq.${user1Id}`)
 
-    if (!existingContact) {
-      const { error } = await supabase
-        .from('contacts')
-        .insert([{
-          user1_id: user1Id,
-          user2_id: user2Id
-        }])
+        if (queryError) {
+          // 如果查询失败，可能是因为表不存在或字段不存在，回退到使用旧的系统
+          console.warn('对话表查询失败，回退到旧的消息系统:', queryError.message)
+          return 'fallback-conversation' // 返回一个默认的对话ID
+        }
 
-      if (error) throw error
+        // 如果存在对话，返回第一个匹配的对话ID
+        if (existingConversations && existingConversations.length > 0) {
+          return existingConversations[0].id
+        }
+
+        // 创建新的对话 - 简化处理：让第一个用户作为学生，第二个用户作为企业
+        const { data: newConversation, error: insertError } = await supabase
+          .from('conversations')
+          .insert([{
+            student_id: user1Id,
+            company_id: user2Id,
+            job_id: jobId || null
+          }])
+          .select('id')
+          .single()
+
+        if (insertError) {
+          console.warn('创建对话失败，回退到旧的消息系统:', insertError.message)
+          return 'fallback-conversation' // 返回一个默认的对话ID
+        }
+
+        return newConversation.id
+      } catch (tableError) {
+        // 如果对话表操作失败，回退到使用旧的消息系统
+        console.warn('对话表操作异常，回退到旧的消息系统:', tableError)
+        return 'fallback-conversation' // 返回一个默认的对话ID
+      }
+    } catch (error) {
+      console.error('确保对话关系失败:', error)
+      // 即使失败也返回一个默认的对话ID，保证消息功能基本可用
+      return 'fallback-conversation'
     }
   },
 
@@ -159,7 +313,7 @@ export const messageApi = {
   async markAsRead(messageId: string) {
     const { error } = await supabase
       .from('messages')
-      .update({ read: true })
+      .update({ is_read: true, read_at: new Date().toISOString() })
       .eq('id', messageId)
 
     if (error) throw error
@@ -167,22 +321,15 @@ export const messageApi = {
 
   // 标记对话所有消息为已读
   async markConversationAsRead(conversationId: string, userId: string) {
-    const { data: contact } = await supabase
-      .from('contacts')
-      .select('*')
-      .eq('id', conversationId)
-      .single()
-
-    if (!contact) throw new Error('对话不存在')
-
-    const otherUserId = contact.user1_id === userId ? contact.user2_id : contact.user1_id
-
     const { error } = await supabase
       .from('messages')
-      .update({ read: true })
-      .eq('sender_id', otherUserId)
+      .update({ 
+        is_read: true, 
+        read_at: new Date().toISOString() 
+      })
+      .eq('conversation_id', conversationId)
       .eq('receiver_id', userId)
-      .eq('read', false)
+      .eq('is_read', false)
 
     if (error) throw error
   },

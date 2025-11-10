@@ -1,17 +1,8 @@
 # Supabase配置文件
-[project]
-id = "wptvwhlazelotraoagwt"
-
-[db]
-# 数据库配置
+project_id = "wptvwhlazelotraoagwt"
 
 [auth]
-# 认证配置
 site_url = "http://localhost:5175"
 
-# 禁用邮箱验证（仅用于开发环境）
 [mail]
 auto_confirm = true
-
-[functions]
-# 函数配置
