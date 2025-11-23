@@ -84,6 +84,7 @@ interface FavoriteJob {
 }
 
 const favorites = ref<FavoriteJob[]>([])
+const loading = ref(false)
 
 // 加载收藏数据
 const loadFavorites = async () => {

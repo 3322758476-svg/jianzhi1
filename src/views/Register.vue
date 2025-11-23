@@ -297,7 +297,7 @@ const handleRegister = async () => {
       const emailResult = await sendWelcomeEmail(
         registerForm.email,
         registerForm.name || registerForm.companyName || registerForm.email.split('@')[0],
-        registerForm.userType
+        registerForm.userType as 'student' | 'company'
       )
 
       if (result.requiresEmailConfirmation) {

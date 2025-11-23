@@ -147,6 +147,7 @@ import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '../store'
+import { supabase } from '../lib/supabase'
 import { ChatDotRound, UserFilled, Check, User, OfficeBuilding } from '@element-plus/icons-vue'
 import LoginErrorDisplay from '@/components/LoginErrorDisplay.vue'
 
@@ -217,8 +218,8 @@ const handleLogin = async () => {
         router.push('/')
       }
     } else {
-      console.error('❌ 登录失败:', result.error)
-      handleLoginError(result.error)
+      console.error('❌ 登录失败: 未知错误')
+      handleLoginError('登录失败，请检查账号和密码')
     }
   } catch (error: any) {
     console.error('❌ 登录异常:', error)
@@ -341,7 +342,7 @@ const handleWechatLogin = async () => {
   try {
     // 使用 Supabase OAuth 登录
     const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'wechat',
+      provider: 'github',
       options: {
         redirectTo: window.location.origin
       }
@@ -363,7 +364,7 @@ const handleQQLogin = async () => {
   try {
     // 使用 Supabase OAuth 登录
     const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'qq',
+      provider: 'google',
       options: {
         redirectTo: window.location.origin
       }

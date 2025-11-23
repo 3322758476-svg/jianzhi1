@@ -136,6 +136,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { ElMessage } from 'element-plus'
 import { Connection, Bell, Message, Document } from '@element-plus/icons-vue'
 
 // 可用集成列表

@@ -122,6 +122,7 @@ import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import { useUserStore } from '../store'
+import { supabase } from '../lib/supabase'
 
 import { companyDataService } from '../services/companyDataService'
 
@@ -133,6 +134,10 @@ const filterStatus = ref('')
 const currentPage = ref(1)
 const pageSize = ref(10)
 const loading = ref(false)
+
+// 表单相关状态
+const jobFormVisible = ref(false)
+const editingJob = ref(null)
 
 const jobs = ref([])
 
@@ -272,6 +277,20 @@ const handleJobSubmit = async (jobData: any) => {
   } catch (error) {
     console.error('操作岗位失败:', error)
     ElMessage.error('操作失败: ' + (error.message || '未知错误'))
+  }
+}
+
+const editJob = (job: any) => {
+  console.log('editJob被调用，参数类型:', typeof job)
+  console.log('editJob参数详情:', job)
+  
+  // 检查是否是有效的工作对象
+  if (job && typeof job === 'object' && job.id) {
+    editingJob.value = job
+    jobFormVisible.value = true
+  } else {
+    console.error('无效的岗位对象:', job)
+    ElMessage.error('无法编辑该岗位，数据异常')
   }
 }
 

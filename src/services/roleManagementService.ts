@@ -119,6 +119,124 @@ export class RoleManagementService {
   }
 
   /**
+   * 编辑成员信息
+   */
+  async editMember(memberId: string, memberData: any) {
+    const companyId = await this.getCurrentCompanyId()
+    if (!companyId) {
+      throw new Error('未找到公司信息')
+    }
+
+    // 检查权限
+    if (!(await permissionService.hasPermission(Permission.MEMBER_MANAGE))) {
+      throw new Error('无权限编辑成员信息')
+    }
+
+    try {
+      // 验证成员属于当前公司
+      const { data: memberData, error: checkError } = await supabase
+        .from('profiles')
+        .select('company_id')
+        .eq('id', memberId)
+        .single()
+
+      if (checkError || memberData.company_id !== companyId) {
+        throw new Error('无权编辑此成员信息')
+      }
+
+      const { data, error } = await supabase
+        .from('profiles')
+        .update(memberData)
+        .eq('id', memberId)
+        .select()
+        .single()
+
+      if (error) throw error
+
+      return data
+    } catch (error) {
+      console.error('编辑成员信息失败:', error)
+      throw error
+    }
+  }
+
+  /**
+   * 移除成员
+   */
+  async removeMember(memberId: string) {
+    const companyId = await this.getCurrentCompanyId()
+    if (!companyId) {
+      throw new Error('未找到公司信息')
+    }
+
+    // 检查权限
+    if (!(await permissionService.hasPermission(Permission.MEMBER_MANAGE))) {
+      throw new Error('无权限移除成员')
+    }
+
+    try {
+      // 验证成员属于当前公司
+      const { data: memberData, error: checkError } = await supabase
+        .from('profiles')
+        .select('company_id')
+        .eq('id', memberId)
+        .single()
+
+      if (checkError || memberData.company_id !== companyId) {
+        throw new Error('无权移除此成员')
+      }
+
+      const { data, error } = await supabase
+        .from('profiles')
+        .update({ 
+          company_id: null,
+          role: 'student' // 重置为默认角色
+        })
+        .eq('id', memberId)
+        .select()
+        .single()
+
+      if (error) throw error
+
+      return data
+    } catch (error) {
+      console.error('移除成员失败:', error)
+      throw error
+    }
+  }
+
+  /**
+   * 更新公司信息
+   */
+  async updateCompanyInfo(companyData: any) {
+    const companyId = await this.getCurrentCompanyId()
+    if (!companyId) {
+      throw new Error('未找到公司信息')
+    }
+
+    // 检查权限
+    if (!(await permissionService.hasPermission(Permission.SETTINGS_EDIT))) {
+      throw new Error('无权限编辑公司信息')
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('companies')
+        .update(companyData)
+        .eq('id', companyId)
+        .select()
+        .single()
+
+      if (error) throw error
+
+      return data
+    } catch (error) {
+      console.error('更新公司信息失败:', error)
+      throw error
+    }
+  }
+
+  /**
    * 邀请新成员
    */
   async inviteMember(inviteData: {

@@ -472,6 +472,18 @@ const loadMembers = async () => {
   }
 }
 
+const editMember = (member: any) => {
+  try {
+    // 填充表单数据
+    roleForm.memberId = member.id
+    roleForm.role = member.role as UserRole
+    roleDialogVisible.value = true
+  } catch (error) {
+    console.error('编辑成员失败:', error)
+    ElMessage.error('编辑成员失败: ' + error.message)
+  }
+}
+
 const loadRolePermissions = async () => {
   if (!selectedRole.value) return
   
@@ -512,13 +524,13 @@ const sendInvitation = async () => {
 const editMemberRole = (member: any) => {
   roleForm.memberId = member.id
   roleForm.memberName = member.username
-  roleForm.role = member.role
+  roleForm.role = member.role as UserRole
   roleDialogVisible.value = true
 }
 
 const updateMemberRole = async () => {
   try {
-    await roleManagementService.updateMemberRole(roleForm.memberId, roleForm.role)
+    await roleManagementService.updateMemberRole(roleForm.memberId, roleForm.role as any)
     ElMessage.success('角色修改成功')
     roleDialogVisible.value = false
     

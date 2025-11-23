@@ -132,9 +132,9 @@
                 <div v-if="rating.reply" class="rating-reply">
                   <div class="reply-header">
                     <span class="reply-label">回复：</span>
-                    <span class="reply-time">{{ rating.reply.time }}</span>
+                    <span class="reply-time">{{ (rating.reply as any)?.time }}</span>
                   </div>
-                  <p class="reply-content">{{ rating.reply.content }}</p>
+                  <p class="reply-content">{{ (rating.reply as any)?.content }}</p>
                 </div>
                 
                 <!-- 回复按钮 -->

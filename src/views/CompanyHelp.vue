@@ -180,6 +180,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { ElMessage } from 'element-plus'
 import { Search, Phone, ChatDotSquare, VideoPlay, QuestionFilled, Document, Tools } from '@element-plus/icons-vue'
 
 // 帮助分类

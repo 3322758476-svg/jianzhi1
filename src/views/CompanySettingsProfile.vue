@@ -103,7 +103,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import CompanySidebar from '../components/CompanySidebar.vue'
 import { Check, Plus } from '@element-plus/icons-vue'
-import type { FormInstance, FormRules } from 'element-plus'
+import { ElMessage, type FormInstance, FormRules } from 'element-plus'
 
 interface ProfileForm {
   name: string
