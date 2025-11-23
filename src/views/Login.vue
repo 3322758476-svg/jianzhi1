@@ -211,10 +211,10 @@ const handleLogin = async () => {
       
       // 根据实际用户角色跳转到对应页面
       if (userStore.user?.role === 'company') {
-        ElMessage.success('企业登录成功')
+        console.log('企业登录成功')
         router.push('/company/dashboard')
       } else {
-        ElMessage.success('学生登录成功')
+        console.log('学生登录成功')
         router.push('/')
       }
     } else {
@@ -337,7 +337,7 @@ const handleRetryLogin = () => {
 
 const handleWechatLogin = async () => {
   // 微信登录流程
-  ElMessage.info('正在跳转到微信授权...')
+  console.log('正在跳转到微信授权...')
   
   try {
     // 使用 Supabase OAuth 登录

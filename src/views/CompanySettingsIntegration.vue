@@ -298,9 +298,9 @@ const filteredLogs = computed(() => {
 // 切换集成状态
 const toggleIntegration = (integration: any) => {
   if (integration.enabled) {
-    ElMessage.success(`${integration.name} 已启用`)
+    console.log(`${integration.name} 已启用`)
   } else {
-    ElMessage.info(`${integration.name} 已禁用`)
+    console.log(`${integration.name} 已禁用`)
   }
 }
 

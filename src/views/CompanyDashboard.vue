@@ -189,8 +189,8 @@
           </div>
 
           <div class="job-actions">
-            <el-button size="small" @click="editJob(job)">编辑</el-button>
-            <el-button size="small" type="danger" @click="deleteJob(job)">删除</el-button>
+            <el-button size="small" @click="() => editJob(job)">编辑</el-button>
+            <el-button size="small" type="danger" @click="() => deleteJob(job)">删除</el-button>
           </div>
         </div>
       </div>

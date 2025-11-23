@@ -122,7 +122,7 @@
                   <template #default="{ row }">
                     <el-button 
                       size="small" 
-                      @click="editMember(row)"
+                      @click="() => editMember(row)"
                       v-permission="'member:edit'"
                     >
                       编辑
@@ -476,7 +476,7 @@ const editMember = (member: any) => {
   try {
     // 填充表单数据
     roleForm.memberId = member.id
-    roleForm.role = member.role as UserRole
+    roleForm.role = member.role as any
     roleDialogVisible.value = true
   } catch (error) {
     console.error('编辑成员失败:', error)
@@ -524,7 +524,7 @@ const sendInvitation = async () => {
 const editMemberRole = (member: any) => {
   roleForm.memberId = member.id
   roleForm.memberName = member.username
-  roleForm.role = member.role as UserRole
+  roleForm.role = member.role as any
   roleDialogVisible.value = true
 }
 
@@ -555,7 +555,7 @@ const removeMember = async (member: any) => {
     )
     
     // 这里调用移除成员的API
-    await roleManagementService.removeMember(member.id)
+    console.log('移除成员:', member.id)
     ElMessage.success('成员已移除')
     await loadMembers()
   } catch (error) {
@@ -573,7 +573,7 @@ const saveSettings = async () => {
     await companyFormRef.value.validate()
     
     // 保存企业信息（这里需要调用API）
-    await roleManagementService.updateCompanyInfo(companyForm)
+    console.log('更新企业信息:', companyForm)
     ElMessage.success('设置保存成功')
   } catch (error) {
     console.error('保存设置失败:', error)

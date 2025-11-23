@@ -310,16 +310,16 @@ export const useUserStore = defineStore('user', {
           // 使用默认信息
           this.user = {
             id: data.user.id,
-            username: data.user.user_metadata?.username || data.user.email?.split('@')[0] || credentials.username,
+            username: data.user.user_metadata?.username || data.user.email?.split('@')[0] || data.user.user_metadata?.name || data.user.user_metadata?.companyName || data.user.email?.split('@')[0] || '用户',
             email: data.user.email || email,
             role: credentials.type,
             avatar: data.user.user_metadata?.avatar || '',
             phone: data.user.user_metadata?.phone || '',
             school: data.user.user_metadata?.school || '',
             major: data.user.user_metadata?.major || '',
-            companyName: data.user.user_metadata?.company_name || `${credentials.username}公司`,
+            companyName: data.user.user_metadata?.company_name || `${data.user.user_metadata?.username || data.user.email?.split('@')[0] || '公司'}公司`,
             license: data.user.user_metadata?.license || '',
-            contactPerson: data.user.user_metadata?.contact_person || credentials.username,
+            contactPerson: data.user.user_metadata?.contact_person || data.user.user_metadata?.username || data.user.email?.split('@')[0] || '联系人',
             contactPhone: data.user.user_metadata?.contact_phone || '',
             registerTime: data.user.created_at || new Date().toISOString()
           }
@@ -328,9 +328,9 @@ export const useUserStore = defineStore('user', {
           const userMetadata = data.user.user_metadata
           this.user = {
             id: data.user.id,
-            username: userMetadata?.username || data.user.email?.split('@')[0] || credentials.username,
+            username: userMetadata?.username || data.user.email?.split('@')[0] || data.user.user_metadata?.username || '用户',
             email: data.user.email || email,
-            role: profileData.role || credentials.type,
+            role: profileData.role || data.user.user_metadata?.role || 'student',
             avatar: userMetadata?.avatar || '',
             phone: userMetadata?.phone || '',
             school: userMetadata?.school || '',
@@ -404,7 +404,7 @@ export const useUserStore = defineStore('user', {
         if (data.session) {
           this.user = {
             id: data.user.id,
-            username: data.user.user_metadata?.username || data.user.email?.split('@')[0] || credentials.username,
+            username: data.user.user_metadata?.username || data.user.email?.split('@')[0] || data.user.user_metadata?.name || data.user.user_metadata?.companyName || data.user.email?.split('@')[0] || '用户',
             email: data.user.email,
             role: data.user.user_metadata.role,
             avatar: '',

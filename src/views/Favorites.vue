@@ -89,7 +89,7 @@ const loading = ref(false)
 // 加载收藏数据
 const loadFavorites = async () => {
   try {
-    loading.value = true
+    const loading = ref(true)
     // 模拟数据加载
     await new Promise(resolve => setTimeout(resolve, 500))
     

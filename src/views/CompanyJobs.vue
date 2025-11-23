@@ -90,7 +90,7 @@
             <el-button size="small" @click="viewApplications(row)">
               查看申请
             </el-button>
-            <el-button size="small" type="primary" @click="editJob(row)">
+            <el-button size="small" type="primary" @click="() => editJob(row)">
               编辑
             </el-button>
             <el-button size="small" type="danger" @click="deleteJob(row)">

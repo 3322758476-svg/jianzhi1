@@ -319,15 +319,15 @@ const viewResult = (result: any) => {
 
 // 快速链接功能
 const contactSupport = () => {
-  ElMessage.info('客服功能开发中')
+  console.log('联系客服')
 }
 
 const submitFeedback = () => {
-  ElMessage.info('反馈功能开发中')
+  console.log('提交反馈')
 }
 
 const viewTutorials = () => {
-  ElMessage.info('视频教程功能开发中')
+  console.log('查看视频教程')
 }
 
 onMounted(() => {

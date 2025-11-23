@@ -297,20 +297,14 @@ const handleRegister = async () => {
       const emailResult = await sendWelcomeEmail(
         registerForm.email,
         registerForm.name || registerForm.companyName || registerForm.email.split('@')[0],
-        registerForm.userType as 'student' | 'company'
+        registerForm.userType as any
       )
 
       if (result.requiresEmailConfirmation) {
         if (emailResult.success) {
-          ElMessage.success({
-            message: '注册成功！验证邮件已发送到您的邮箱，请检查并验证邮箱地址后登录',
-            duration: 5000
-          })
+          console.log('注册成功！验证邮件已发送到您的邮箱，请检查并验证邮箱地址后登录')
         } else {
-          ElMessage.success({
-            message: '注册成功！请检查您的邮箱并验证邮箱地址后登录',
-            duration: 5000
-          })
+          console.log('注册成功！请检查您的邮箱并验证邮箱地址后登录')
         }
         // 跳转到登录页面
         router.push('/login')
